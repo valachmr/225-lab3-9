@@ -18,23 +18,13 @@ pipeline {
             }
         }
 
-        stage('Diagnose Python') {
-            steps {
-                sh '''
-                    which python || echo "python not found"
-                    which python3 || echo "python3 not found"
-                    which pip || echo "pip not found"
-                    which pip3 || echo "pip3 not found"
-                    python3 --version || echo "python3 version failed"
-                    python3 -m pip --version || echo "python3 -m pip failed"
-                '''
-            }
-        }
 
-        stage('Install Dependencies') {                  // ADDED
+        stage('Install Dependencies') {
             steps {
                 sh '''
-                    pip3 install -r requirements.txt
+                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                    python3 get-pip.py --user
+                    python3 -m pip install -r requirements.txt
                 '''
             }
         }
