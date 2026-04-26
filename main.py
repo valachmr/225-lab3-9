@@ -1,16 +1,16 @@
-from flask import Flask, request, jsonify, render_template_string, redirect, url_for, flash
+from flask import Flask, request, render_template_string, redirect, url_for, flash
 import sqlite3
 import os
+import re
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))  # Needed for flash messages
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
-# Database file path
 DATABASE = os.environ.get('DATABASE', 'demo.db')
 
 def get_db():
     db = sqlite3.connect(DATABASE)
-    db.row_factory = sqlite3.Row  # This enables name-based access to columns
+    db.row_factory = sqlite3.Row
     return db
 
 def init_db():
@@ -24,6 +24,25 @@ def init_db():
             );
         ''')
         db.commit()
+
+def validate_name(name):
+    if not name or len(name.strip()) == 0:
+        return False, 'Name cannot be empty.'
+    if len(name) > 100:
+        return False, 'Name must be 100 characters or fewer.'
+    if not re.match(r"^[A-Za-z\s'\-]+$", name):
+        return False, 'Name contains invalid characters.'
+    return True, ''
+
+def validate_phone(phone):
+    if not phone or len(phone.strip()) == 0:
+        return False, 'Phone number cannot be empty.'
+    digits_only = re.sub(r'[\s\-\(\)\+]', '', phone)
+    if not digits_only.isdigit():
+        return False, 'Phone number contains invalid characters.'
+    if len(digits_only) < 7 or len(digits_only) > 15:
+        return False, 'Phone number must be between 7 and 15 digits.'
+    return True, ''
 
 @app.route('/', methods=['GET', 'POST'])
 def index():

@@ -3,12 +3,15 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from main import app
+from main import app, init_db
 
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
     app.config['DATABASE'] = ':memory:'
+    os.environ['DATABASE'] = ':memory:'
+    with app.app_context():
+        init_db()                    # <-- creates the table before each test
     with app.test_client() as client:
         yield client
 
