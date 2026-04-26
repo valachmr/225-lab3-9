@@ -81,17 +81,17 @@ pipeline {
 
         stage('Deploy to Dev Environment') {
             steps {
-                script {
+                withCredentials([file(credentialsId: 'valachmr-225-sp26', variable: 'KUBECONFIG_FILE')]) {
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-dev.yaml"
-                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f deployment-dev.yaml"
+                    sh 'kubectl --kubeconfig=$KUBECONFIG_FILE apply -f deployment-dev.yaml'
                 }
             }
         }
 
         stage('Check Kubernetes Cluster') {
             steps {
-                script {
-                    sh "KUBECONFIG=${KUBECONFIG} kubectl get all"
+                withCredentials([file(credentialsId: 'valachmr-225-sp26', variable: 'KUBECONFIG_FILE')]) {
+                    sh 'kubectl --kubeconfig=$KUBECONFIG_FILE get all'
                 }
             }
         }
