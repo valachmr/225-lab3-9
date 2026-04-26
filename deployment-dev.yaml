@@ -29,7 +29,7 @@ spec:
             - name: FLASK_DEBUG
               value: "false"
             - name: DATABASE
-              value: "/app/demo.db"
+              value: "/tmp/demo.db"
 
 ---
 apiVersion: v1
