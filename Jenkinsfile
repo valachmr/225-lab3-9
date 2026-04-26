@@ -83,7 +83,7 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'valachmr-225-sp26', variable: 'KUBECONFIG_FILE')]) {
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-dev.yaml"
-                    sh 'kubectl --kubeconfig=$KUBECONFIG_FILE apply -f deployment-dev.yaml'
+                    sh 'kubectl apply --kubeconfig=$KUBECONFIG_FILE -f deployment-dev.yaml'
                 }
             }
         }
@@ -91,7 +91,7 @@ pipeline {
         stage('Check Kubernetes Cluster') {
             steps {
                 withCredentials([file(credentialsId: 'valachmr-225-sp26', variable: 'KUBECONFIG_FILE')]) {
-                    sh 'kubectl --kubeconfig=$KUBECONFIG_FILE get all'
+                    sh 'kubectl get all --kubeconfig=$KUBECONFIG_FILE'
                 }
             }
         }
