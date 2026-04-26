@@ -18,6 +18,19 @@ pipeline {
             }
         }
 
+        stage('Diagnose Python') {
+            steps {
+                sh '''
+                    which python || echo "python not found"
+                    which python3 || echo "python3 not found"
+                    which pip || echo "pip not found"
+                    which pip3 || echo "pip3 not found"
+                    python3 --version || echo "python3 version failed"
+                    python3 -m pip --version || echo "python3 -m pip failed"
+                '''
+            }
+        }
+
         stage('Install Dependencies') {                  // ADDED
             steps {
                 sh '''
