@@ -21,7 +21,7 @@ pipeline {
         stage('Install Dependencies') {                  // ADDED
             steps {
                 sh '''
-                    pip install -r requirements.txt
+                    pip3 install -r requirements.txt
                 '''
             }
         }
@@ -29,7 +29,7 @@ pipeline {
         stage('Run Unit Tests') {
             steps {
                 sh '''
-                    pytest tests/ --tb=short -v
+                    python3 -m pytest tests/ --tb=short -v
                 '''
             }
         }
@@ -37,7 +37,7 @@ pipeline {
         stage('Security Scan - Bandit') {
             steps {
                 sh '''
-                    bandit -r app.py -f txt -o bandit-report.txt || true
+                    python3 -m bandit -r main.py -f txt -o bandit-report.txt || true
                     cat bandit-report.txt
                 '''
             }
@@ -51,7 +51,7 @@ pipeline {
         stage('Dependency Vulnerability Scan - Safety') {
             steps {
                 sh '''
-                    safety check -r requirements.txt --output text || true
+                    python3 -m safety check -r requirements.txt --output text || true
                 '''
             }
         }
