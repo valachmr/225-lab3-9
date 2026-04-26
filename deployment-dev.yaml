@@ -16,25 +16,20 @@ spec:
     spec:
       containers:
         - name: flask
-          image: cithit/valachmr:latest   #<-----change this!!!!
+          image: cithit/valachmr:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
-          env:                                      # ADDED: inject secrets as env vars
+          env:
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: flask-secret
                   key: secret_key
-            - name: FLASK_DEBUG                     # ADDED: explicitly disable debug mode
+            - name: FLASK_DEBUG
               value: "false"
-            - name: DATABASE                        # ADDED: explicit DB path inside container
+            - name: DATABASE
               value: "/app/demo.db"
-          securityContext:                          # ADDED: lock down the container
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
-            runAsUser: 1000
-            readOnlyRootFilesystem: false           # kept false since SQLite needs to write
 
 ---
 apiVersion: v1
