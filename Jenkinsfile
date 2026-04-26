@@ -82,17 +82,16 @@ pipeline {
         stage('Deploy to Dev Environment') {
             steps {
                 script {
-                    def kubeConfig = readFile(KUBECONFIG)
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-dev.yaml"
-                    sh "kubectl apply -f deployment-dev.yaml"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f deployment-dev.yaml"
                 }
             }
         }
-        
+
         stage('Check Kubernetes Cluster') {
             steps {
                 script {
-                    sh "kubectl get all"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl get all"
                 }
             }
         }
