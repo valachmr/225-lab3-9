@@ -1,1 +1,4 @@
 flask
+bandit
+safety
+pytest

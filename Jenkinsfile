@@ -3,10 +3,10 @@ pipeline {
 
     environment {
         DOCKER_CREDENTIALS_ID = 'roseaw-dockerhub'  
-        DOCKER_IMAGE = 'cithit/valachmr'                               //<-----change this to your MiamiID!
+        DOCKER_IMAGE = 'cithit/valachmr'
         IMAGE_TAG = "build-${BUILD_NUMBER}"
-        GITHUB_URL = 'https://github.com/valachmr/225-lab3-9.git' //<-----change this to match this new repository!
-        KUBECONFIG = credentials('valachmr-225-sp26')                           //<-----change this to match your kubernetes credentials (MiamiID-225)! 
+        GITHUB_URL = 'https://github.com/valachmr/225-lab3-9.git'
+        KUBECONFIG = credentials('valachmr-225-sp26')                        
     }
 
     stages {
@@ -15,6 +15,49 @@ pipeline {
                 cleanWs()
                 checkout([$class: 'GitSCM', branches: [[name: '*/main']],
                           userRemoteConfigs: [[url: "${GITHUB_URL}"]]])
+            }
+        }
+
+        stage('Install Dependencies') {                  // ADDED
+            steps {
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Run Unit Tests') {                        // ADDED
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    pytest tests/ --tb=short -v
+                '''
+            }
+        }
+
+        stage('Security Scan - Bandit') {                // ADDED
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    bandit -r app.py -f txt -o bandit-report.txt || true
+                    cat bandit-report.txt
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'bandit-report.txt', fingerprint: true
+                }
+            }
+        }
+
+        stage('Dependency Vulnerability Scan - Safety') { // ADDED
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    safety check -r requirements.txt --output text || true
+                '''
             }
         }
 
@@ -41,12 +84,9 @@ pipeline {
         stage('Deploy to Dev Environment') {
             steps {
                 script {
-                    // This sets up the Kubernetes configuration using the specified KUBECONFIG
                     def kubeConfig = readFile(KUBECONFIG)
-                    // This updates the deployment-dev.yaml to use the new image tag
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-dev.yaml"
-                   // sh 'kubectl apply -f pv-claim.yaml'
-                   sh "kubectl apply -f deployment-dev.yaml"
+                    sh "kubectl apply -f deployment-dev.yaml"
                 }
             }
         }
@@ -61,7 +101,6 @@ pipeline {
     }
 
     post {
-
         success {
             slackSend color: "good", message: "Build Completed: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
         }

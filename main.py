@@ -3,10 +3,10 @@ import sqlite3
 import os
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'  # Needed for flash messages
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))  # Needed for flash messages
 
 # Database file path
-DATABASE = 'demo.db'
+DATABASE = os.environ.get('DATABASE', 'demo.db')
 
 def get_db():
     db = sqlite3.connect(DATABASE)
@@ -27,24 +27,29 @@ def init_db():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    message = ''  # Local message variable
     if request.method == 'POST':
-        name = request.form.get('name')
-        phone = request.form.get('phone')
-        if name and phone:
-            db = get_db()
-            db.execute('INSERT INTO contacts (name, phone) VALUES (?, ?)', (name, phone))
-            db.commit()
-            flash('Contact added successfully.')
-            return redirect(url_for('index'))  # <--- Prevents duplicate inserts
-        else:
-            flash('Missing name or phone number.')
+        name = request.form.get('name', '').strip()
+        phone = request.form.get('phone', '').strip()
 
-    # Always display the contacts table
+        name_valid, name_error = validate_name(name)
+        phone_valid, phone_error = validate_phone(phone)
+
+        if not name_valid:
+            flash(name_error, 'error')
+            return redirect(url_for('index'))
+        if not phone_valid:
+            flash(phone_error, 'error')
+            return redirect(url_for('index'))
+
+        db = get_db()
+        db.execute('INSERT INTO contacts (name, phone) VALUES (?, ?)', (name, phone))
+        db.commit()
+        flash('Contact added successfully.', 'success')
+        return redirect(url_for('index'))
+
     db = get_db()
     contacts = db.execute('SELECT * FROM contacts').fetchall()
 
-    # Display the HTML form along with the contacts table
     return render_template_string('''
         <!DOCTYPE html>
         <html>
@@ -55,17 +60,17 @@ def index():
             <h2>Add Contact</h2>
             <form method="POST" action="/">
                 <label for="name">Name:</label><br>
-                <input type="text" id="name" name="name" required><br>
+                <input type="text" id="name" name="name" required maxlength="100"><br>
                 <label for="phone">Phone Number:</label><br>
-                <input type="text" id="phone" name="phone" required><br><br>
+                <input type="text" id="phone" name="phone" required maxlength="20"><br><br>
                 <input type="submit" value="Submit">
             </form>
 
-            {% with messages = get_flashed_messages() %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    <ul style="color: green;">
-                        {% for msg in messages %}
-                            <li>{{ msg }}</li>
+                    <ul>
+                        {% for category, msg in messages %}
+                            <li style="color: {{ 'green' if category == 'success' else 'red' }};">{{ msg }}</li>
                         {% endfor %}
                     </ul>
                 {% endif %}
@@ -91,9 +96,10 @@ def index():
             {% endif %}
         </body>
         </html>
-    ''', message=message, contacts=contacts)
+    ''', contacts=contacts)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    init_db()  # Initialize the database and table
-    app.run(debug=True, host='0.0.0.0', port=port)
+    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    init_db()
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
