@@ -21,26 +21,22 @@ pipeline {
         stage('Install Dependencies') {                  // ADDED
             steps {
                 sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
                     pip install -r requirements.txt
                 '''
             }
         }
 
-        stage('Run Unit Tests') {                        // ADDED
+        stage('Run Unit Tests') {
             steps {
                 sh '''
-                    . venv/bin/activate
                     pytest tests/ --tb=short -v
                 '''
             }
         }
 
-        stage('Security Scan - Bandit') {                // ADDED
+        stage('Security Scan - Bandit') {
             steps {
                 sh '''
-                    . venv/bin/activate
                     bandit -r app.py -f txt -o bandit-report.txt || true
                     cat bandit-report.txt
                 '''
@@ -52,10 +48,9 @@ pipeline {
             }
         }
 
-        stage('Dependency Vulnerability Scan - Safety') { // ADDED
+        stage('Dependency Vulnerability Scan - Safety') {
             steps {
                 sh '''
-                    . venv/bin/activate
                     safety check -r requirements.txt --output text || true
                 '''
             }
